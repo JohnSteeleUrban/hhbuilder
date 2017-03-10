@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Household builder</title>
+    <style>
+        .debug {
+            font-family: monospace;
+            border: 1px solid black;
+            padding: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Household builder</h1>
+    <div class="builder">
+        <ol class="household"></ol>
+        <form>
+            <div>
+                <label>
+                    Age
+                    <input type="text" name="age">
+                </label>
+            </div>
+            <div>
+                <label>
+                    Relationship
+                    <select name="rel">
+                        <option value="">---</option>
+                        <option value="self">Self</option>
+                        <option value="spouse">Spouse</option>
+                        <option value="child">Child</option>
+                        <option value="parent">Parent</option>
+                        <option value="grandparent">Grandparent</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+            </div>
+            <div>
+                <label>
+                    Smoker?
+                    <input type="checkbox" name="smoker">
+                </label>
+            </div>
+            <div>
+                <button class="add">add</button>
+            </div>
+            <div>
+                <button type="submit">submit</button>
+            </div>
+        </form>
+    </div>
+    <pre class="debug"></pre>
+    <script>
+        (function () {
+
+            document.addEventListener("DOMContentLoaded", function () {
+                var age = "";
+                var rel = "";
+                var smoker = "";
+                var originalHtml = document.getElementsByClassName("builder")[0].innerHTML;
+                document.getElementsByClassName("builder")[0].innerHTML = "<p id='instructions' style='display:none'>Click on a member to remove them.</p>" + originalHtml;
+                var ol = document.getElementsByClassName("household")[0];
+
+                ol.addEventListener('click', function (e) {
+                    if (e.target.tagName === 'LI') {
+                        e.target.parentNode.removeChild(e.target);
+                        displayInstructions();
+                    }
+                });
+
+                document.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    age = document.getElementsByName("age")[0].value;
+                    rel = document.getElementsByName("rel")[0].value;
+                    smoker = document.getElementsByName("smoker")[0].checked;
+                    if (validate(age, rel)) {
+                        fakeTripToServer();
+                    } else {
+                        alert("Please check your submission.  Age (numeric) and Relationship are required.");
+                    }
+                });
+
+                document.getElementsByClassName("add")[0].addEventListener("click", function (e) {
+                    e.preventDefault();
+                    age = document.getElementsByName("age")[0].value;
+                    rel = document.getElementsByName("rel")[0].value;
+                    smoker = document.getElementsByName("smoker")[0].checked;
+                    if (validate(age, rel)) {
+                        var household = document.getElementsByClassName("household")[0].innerHTML;
+                        document.getElementsByClassName("household")[0].innerHTML = household + "<li>" + rel + ": Age-" + age + " Smoker-" + smoker + "</li>";
+                    } else {
+                        alert("Please check your submission.  Age (numeric) and Relationship required.");
+                    }
+                    displayInstructions();
+                });
+
+            });//end DOMContentLoaded
+
+            function validate(age, rel) {
+                var isAgeValid = !isNaN(parseInt(age, 10)) && parseInt(Number(age));
+                var isRelValid = rel.length > 0;
+                return isAgeValid && isRelValid;
+            }
+
+            function fakeTripToServer() {
+                var allObj = {};
+                var listItems = document.getElementsByTagName("li");
+                for (var i = 0; i < listItems.length; i++) {
+                    var obj = {};
+                    var text = listItems[i].innerHTML;
+                    var parsedAge = text.replace(/\D/g, '');
+                    var resDex = text.indexOf(":");
+                    var parsedRel = text.substring(0, resDex);
+                    var isSmoker = text.indexOf("true") !== -1;
+                    obj["age"] = parsedAge;
+                    obj["rel"] = parsedRel;
+                    obj["smoker"] = isSmoker;
+                    allObj["member" + (i + 1)] = obj;
+                }
+                var debug = document.getElementsByClassName("debug")[0];
+                
+                debug.innerHTML = JSON.stringify(allObj);
+                debug.style.display = "inline-block";     
+            }
+
+            function displayInstructions() {
+                var hasListItems = document.getElementsByTagName("li").length > 0;
+                var instructions = document.getElementById("instructions");
+                if (hasListItems) {
+                    instructions.style.display = "inherit";
+                } else {
+                    instructions.style.display = "none";
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
